@@ -1,3 +1,5 @@
+chess_board = {}
+
 K = '♚'
 Q = '♛'
 R = '♜'
@@ -23,18 +25,22 @@ def print_board(board):
             piece = board.get((i, j), " ")
             print(f" {piece} ", end="")
             print("|", end="")
-        print()
+        print(f" {i}")
         print("   +--------------------------------+")
     print("      A   B   C   D   E   F   G   H")
 
 
-chess_board = {}
+def main():
+    chess_board[(1, 5)] = K
+    chess_board[(8, 2)] = k
+    chess_board[(7, 4)] = Q
+    chess_board[(2, 7)] = q
+    chess_board[(4, 4)] = P
+    chess_board[(5, 3)] = p
 
-chess_board[(1, 5)] = K
-chess_board[(8, 2)] = k
-chess_board[(7, 4)] = Q
-chess_board[(2, 7)] = q
-chess_board[(4, 4)] = P
-chess_board[(5, 3)] = p
+    print_board(chess_board)
+    pass
 
-print_board(chess_board)
+
+if __name__ == "__main__":
+    main()

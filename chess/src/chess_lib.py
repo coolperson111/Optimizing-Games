@@ -14,18 +14,18 @@ piece_symbols = {
     chess.Piece(chess.BISHOP, chess.WHITE): '♝',
     chess.Piece(chess.KNIGHT, chess.WHITE): '♞',
     chess.Piece(chess.PAWN, chess.WHITE): '♟',
-    None: '  '  # Empty square
+    None: '  '
 }
 
 
-def print_board(board):
+def print_board(board, move):
     print('\033[H\033[J', end="")
     print("      A   B   C   D   E   F   G   H")
     print("   +--------------------------------+")
     for i in range(8, 0, -1):
         print(f" {i} |", end=" ")
         for j in range(1, 9):
-            square = chess.square(j - 1, i - 1)  # Adjust for 0-based indexing
+            square = chess.square(j - 1, i - 1)
             piece = board.piece_at(square)
             if piece is not None:
                 print(f" {piece_symbols.get(piece)} ", end="")
@@ -35,9 +35,10 @@ def print_board(board):
         print()
         print("   +--------------------------------+")
     print("      A   B   C   D   E   F   G   H")
+    print("Previous move:", move)
 
 
-def minimax(board, depth, maximizing_player):
+def minimax(board, depth, alpha, beta, maximizing_player):
     if depth == 0 or board.is_game_over():
         return evaluate_board(board), None
 
@@ -49,11 +50,14 @@ def minimax(board, depth, maximizing_player):
 
         for move in legal_moves:
             board.push(move)
-            eval = minimax(board, depth - 1, False)[0]
+            eval = minimax(board, depth - 1, alpha, beta, False)[0]
             board.pop()
             if eval > max_eval:
                 max_eval = eval
                 best_move = move
+            alpha = max(alpha, eval)
+            if beta <= alpha:
+                break
         return max_eval, best_move
 
     else:
@@ -62,16 +66,19 @@ def minimax(board, depth, maximizing_player):
 
         for move in legal_moves:
             board.push(move)
-            eval = minimax(board, depth - 1, True)[0]
+            eval = minimax(board, depth - 1, alpha, beta, True)[0]
             board.pop()
             if eval < min_eval:
                 min_eval = eval
                 best_move = move
+            beta = min(beta, eval)
+            if beta <= alpha:
+                break
         return min_eval, best_move
 
 
 def evaluate_board(board):
-    # Simple evaluation function: count material
+    # counting score based on pieces on board (and their values)
     piece_values = {
         chess.PAWN: 1,
         chess.KNIGHT: 3,
@@ -91,25 +98,23 @@ def evaluate_board(board):
 
 
 def bot_move(board):
-    depth = 3  # Set the depth for minimax
-    _, best_move = minimax(board, depth, True)
+    depth = 4
+    _, best_move = minimax(board, depth, float('-inf'), float('inf'), True)
     return best_move
 
 
 def main():
-    # Example usage
     board = chess.Board()
     while not board.is_game_over():
         if board.turn == chess.WHITE:
             move = bot_move(board)
             board.push(move)
-            print("Bot's move:", move)
-            print_board(board)
+            print_board(board, move)
         else:
             user_move = input("Enter your move in UCI notation: ")
             try:
                 board.push_uci(user_move)
-                print_board(board)
+                print_board(board, move)
             except ValueError:
                 print("Invalid move, try again.")
 

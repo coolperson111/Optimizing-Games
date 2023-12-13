@@ -1,5 +1,16 @@
 import chess
+from stockfish import Stockfish
 
+
+fish = Stockfish(
+        path="/home/malhar/.local/Programs/stockfish/src/stockfish",
+        depth=1,
+        parameters={"Threads": 1,
+                    "Ponder": "false",
+                    "Contempt": 0,
+                    "Skill Level": 0,
+                    }
+        )
 
 piece_symbols = {
     chess.Piece(chess.KING, chess.BLACK): '♔',
@@ -78,28 +89,42 @@ def minimax(board, depth, alpha, beta, maximizing_player):
 
 
 def evaluate_board(board):
-    # counting score based on pieces on board (and their values)
     piece_values = {
-        chess.PAWN: 1,
-        chess.KNIGHT: 3,
-        chess.BISHOP: 3,
-        chess.ROOK: 5,
-        chess.QUEEN: 9,
-        chess.KING: 100
+        chess.PAWN: 100,
+        chess.KNIGHT: 320,
+        chess.BISHOP: 330,
+        chess.ROOK: 500,
+        chess.QUEEN: 900,
+        chess.KING: 20000
     }
 
     score = 0
     for square in chess.SQUARES:
         piece = board.piece_at(square)
         if piece is not None:
-            score += piece_values[piece.piece_type] * (1 if piece.color == chess.WHITE else -1)
+            score += (piece_values[piece.piece_type] *
+                      (1 if piece.color == chess.WHITE else -1))
 
     return score
 
 
 def bot_move(board):
-    depth = 4
-    _, best_move = minimax(board, depth, float('-inf'), float('inf'), True)
+    opening_moves = ["e2e4", "g1f3", "d2d4"]
+    depth = 3
+    if board.fullmove_number < 4:
+        return chess.Move.from_uci(opening_moves[board.fullmove_number-1])
+    else:
+        _, best_move = minimax(board, depth, float('-inf'), float('inf'), True)
+        return best_move
+
+
+def stockfish_move(board, depth=20):
+    max_time = 500
+    fish.set_fen_position(board.fen())
+
+    best_move = fish.get_best_move_time(time=max_time)
+    print(best_move)
+
     return best_move
 
 
@@ -111,7 +136,8 @@ def main():
             board.push(move)
             print_board(board, move)
         else:
-            user_move = input("Enter your move in UCI notation: ")
+            # user_move = input("Enter your move in UCI notation: ")
+            user_move = stockfish_move(board)
             try:
                 board.push_uci(user_move)
                 print_board(board, move)
@@ -119,6 +145,7 @@ def main():
                 print("Invalid move, try again.")
 
     print("Game over. Result:", board.result())
+    print(board.fullmove_number)
 
 
 if __name__ == "__main__":

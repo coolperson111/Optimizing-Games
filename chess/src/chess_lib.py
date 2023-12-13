@@ -1,5 +1,10 @@
 import chess
 from stockfish import Stockfish
+import chess.svg
+from cairosvg import svg2png
+import matplotlib.pyplot as plt
+from PIL import Image
+import io
 
 
 fish = Stockfish(
@@ -11,6 +16,7 @@ fish = Stockfish(
                     "Skill Level": 0,
                     }
         )
+
 
 piece_symbols = {
     chess.Piece(chess.KING, chess.BLACK): '♔',
@@ -27,6 +33,21 @@ piece_symbols = {
     chess.Piece(chess.PAWN, chess.WHITE): '♟',
     None: '  '
 }
+
+
+def display_board(board, previous_image=None):
+    svg_text = chess.svg.board(board=board)
+    png_output = svg2png(bytestring=svg_text)
+    img_stream = io.BytesIO(png_output)
+    img = Image.open(img_stream)
+    if previous_image:
+        previous_image.remove()
+    plt.imshow(img)
+    plt.axis('off')
+    plt.draw()
+    plt.pause(0.5)
+    plt.clf()
+    return plt.imshow(img)
 
 
 def print_board(board, move):
@@ -98,20 +119,99 @@ def evaluate_board(board):
         chess.KING: 20000
     }
 
+    pawn_table = [
+            0, 0, 0, 0, 0, 0, 0, 0,
+            50, 50, 50, 50, 50, 50, 50, 50,
+            10, 10, 20, 30, 30, 20, 10, 10,
+            5, 5, 10, 25, 25, 10, 5, 5,
+            0, 0, 0, 20, 20, 0, 0, 0,
+            5, -5, -10, 0, 0, -10, -5, 5,
+            5, 10, 10, -20, -20, 10, 10, 5,
+            0, 0, 0, 0, 0, 0, 0, 0
+            ]
+
+    knight_table = [
+            -50, -40, -30, -30, -30, -30, -40, -50,
+            -40, -20, 0, 0, 0, 0, -20, -40,
+            -30, 0, 10, 15, 15, 10, 0, -30,
+            -30, 5, 15, 20, 20, 15, 5, -30,
+            -30, 0, 15, 20, 20, 15, 0, -30,
+            -30, 5, 10, 15, 15, 10, 5, -30,
+            -40, -20, 0, 5, 5, 0, -20, -40,
+            -50, -40, -30, -30, -30, -30, -40, -50
+            ]
+
+    bishop_table = [
+            -20, -10, -10, -10, -10, -10, -10, -20,
+            -10, 0, 0, 0, 0, 0, 0, -10,
+            -10, 0, 5, 10, 10, 5, 0, -10,
+            -10, 5, 5, 10, 10, 5, 5, -10,
+            -10, 0, 10, 10, 10, 10, 0, -10,
+            -10, 10, 10, 10, 10, 10, 10, -10,
+            -10, 5, 0, 0, 0, 0, 5, -10,
+            -20, -10, -10, -10, -10, -10, -10, -20
+            ]
+
+    rook_table = [
+            0, 0, 0, 0, 0, 0, 0, 0,
+            5, 10, 10, 10, 10, 10, 10, 5,
+            -5, 0, 0, 0, 0, 0, 0, -5,
+            -5, 0, 0, 0, 0, 0, 0, -5,
+            -5, 0, 0, 0, 0, 0, 0, -5,
+            -5, 0, 0, 0, 0, 0, 0, -5,
+            -5, 0, 0, 0, 0, 0, 0, -5,
+            0, 0, 0, 5, 5, 0, 0, 0
+            ]
+
+    queen_table = [
+            -20, -10, -10, -5, -5, -10, -10, -20,
+            -10, 0, 0, 0, 0, 0, 0, -10,
+            -10, 0, 5, 5, 5, 5, 0, -10,
+            -5, 0, 5, 5, 5, 5, 0, -5,
+            0, 0, 5, 5, 5, 5, 0, -5,
+            -10, 5, 5, 5, 5, 5, 0, -10,
+            -10, 0, 5, 0, 0, 0, 0, -10,
+            -20, -10, -10, -5, -5, -10, -10, -20
+            ]
+
+    king_table = [
+            20, 30, 10, 0, 0, 10, 30, 20,
+            20, 20, 0, 0, 0, 0, 20, 20,
+            -10, -20, -20, -20, -20, -20, -20, -10,
+            -20, -30, -30, -40, -40, -30, -30, -20,
+            -30, -40, -40, -50, -50, -40, -40, -30,
+            -30, -40, -40, -50, -50, -40, -40, -30,
+            -30, -40, -40, -50, -50, -40, -40, -30,
+            -30, -40, -40, -50, -50, -40, -40, -30
+            ]
+
+    piece_tables = {
+        chess.PAWN: pawn_table,
+        chess.KNIGHT: knight_table,
+        chess.BISHOP: bishop_table,
+        chess.ROOK: rook_table,
+        chess.QUEEN: queen_table,
+        chess.KING: king_table
+    }
+
     score = 0
     for square in chess.SQUARES:
         piece = board.piece_at(square)
         if piece is not None:
-            score += (piece_values[piece.piece_type] *
-                      (1 if piece.color == chess.WHITE else -1))
+            if piece.color == chess.WHITE:
+                score += piece_values[piece.piece_type] + \
+                    piece_tables[piece.piece_type][square]
+            else:
+                score -= piece_values[piece.piece_type] + \
+                    piece_tables[piece.piece_type][chess.square_mirror(square)]
 
     return score
 
 
 def bot_move(board):
-    opening_moves = ["e2e4", "g1f3", "d2d4"]
-    depth = 3
-    if board.fullmove_number < 4:
+    opening_moves = ["e2e4", "g1f3"]
+    depth = 4
+    if board.fullmove_number < 3:
         return chess.Move.from_uci(opening_moves[board.fullmove_number-1])
     else:
         _, best_move = minimax(board, depth, float('-inf'), float('inf'), True)
@@ -119,7 +219,7 @@ def bot_move(board):
 
 
 def stockfish_move(board, depth=20):
-    max_time = 500
+    max_time = 50
     fish.set_fen_position(board.fen())
 
     best_move = fish.get_best_move_time(time=max_time)
@@ -130,17 +230,26 @@ def stockfish_move(board, depth=20):
 
 def main():
     board = chess.Board()
+    """
+    for square in chess.SQUARES:
+        print(square)
+    return
+    """
+
+    disp_img = display_board(board)
     while not board.is_game_over():
         if board.turn == chess.WHITE:
             move = bot_move(board)
             board.push(move)
-            print_board(board, move)
+            # print_board(board, move)
+            disp_img = display_board(board, disp_img)
         else:
             # user_move = input("Enter your move in UCI notation: ")
             user_move = stockfish_move(board)
             try:
                 board.push_uci(user_move)
-                print_board(board, move)
+                # print_board(board, move)
+                disp_img = display_board(board, disp_img)
             except ValueError:
                 print("Invalid move, try again.")
 

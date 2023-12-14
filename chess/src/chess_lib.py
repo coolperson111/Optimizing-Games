@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 from PIL import Image
 import io
 
-
+# GLOBAL CONSTANTS
 fish = Stockfish(
         path="/home/malhar/.local/Programs/stockfish/src/stockfish",
         depth=1,
@@ -17,6 +17,91 @@ fish = Stockfish(
                     }
         )
 
+piece_values = {
+    chess.PAWN: 100,
+    chess.KNIGHT: 320,
+    chess.BISHOP: 330,
+    chess.ROOK: 500,
+    chess.QUEEN: 900,
+    chess.KING: 20000
+}
+
+pawn_table = [
+        0, 0, 0, 0, 0, 0, 0, 0,
+        5, 10, 10, -20, -20, 10, 10, 5,
+        5, -5, -10, 0, 0, -10, -5, 5,
+        0, 0, 0, 20, 20, 0, 0, 0,
+        5, 5, 10, 25, 25, 10, 5, 5,
+        10, 10, 20, 30, 30, 20, 10, 10,
+        50, 50, 50, 50, 50, 50, 50, 50,
+        0, 0, 0, 0, 0, 0, 0, 0
+        ]
+
+knight_table = [
+        -50, -40, -30, -30, -30, -30, -40, -50,
+        -40, -20, 0, 5, 5, 0, -20, -40,
+        -30, 5, 10, 15, 15, 10, 5, -30,
+        -30, 0, 10, 15, 15, 10, 0, -30,
+        -30, 5, 15, 20, 20, 15, 5, -30,
+        -30, 0, 15, 20, 20, 15, 0, -30,
+        -40, -20, 0, 0, 0, 0, -20, -40,
+        -50, -40, -30, -30, -30, -30, -40, -50
+        ]
+
+bishop_table = [
+        -20, -10, -10, -10, -10, -10, -10, -20,
+        -10, 5, 0, 0, 0, 0, 5, -10,
+        -10, 10, 10, 10, 10, 10, 10, -10,
+        -10, 0, 10, 10, 10, 10, 0, -10,
+        -10, 5, 5, 10, 10, 5, 5, -10,
+        -10, 0, 5, 10, 10, 5, 0, -10,
+        -10, 0, 0, 0, 0, 0, 0, -10,
+        -20, -10, -10, -10, -10, -10, -10, -20
+        ]
+
+rook_table = [
+        0, 0, 0, 5, 5, 0, 0, 0,
+        -5, 0, 0, 0, 0, 0, 0, -5,
+        -5, 0, 0, 0, 0, 0, 0, -5,
+        -5, 0, 0, 0, 0, 0, 0, -5,
+        -5, 0, 0, 0, 0, 0, 0, -5,
+        -5, 0, 0, 0, 0, 0, 0, -5,
+        5, 10, 10, 10, 10, 10, 10, 5,
+        0, 0, 0, 0, 0, 0, 0, 0,
+        ]
+
+queen_table = [
+        -20, -10, -10, -5, -5, -10, -10, -20,
+        -10, 0, 0, 0, 0, 0, 0, -10,
+        -10, 0, 5, 5, 5, 5, 0, -10,
+        -5, 0, 5, 5, 5, 5, 0, -5,
+        0, 0, 5, 5, 5, 5, 0, -5,
+        -10, 5, 5, 5, 5, 5, 0, -10,
+        -10, 0, 5, 0, 0, 0, 0, -10,
+        -20, -10, -10, -5, -5, -10, -10, -20
+        ]
+
+king_table = [
+        20, 30, 10, 0, 0, 10, 30, 20,
+        20, 20, 0, 0, 0, 0, 20, 20,
+        -10, -20, -20, -20, -20, -20, -20, -10,
+        -20, -30, -30, -40, -40, -30, -30, -20,
+        -30, -40, -40, -50, -50, -40, -40, -30,
+        -30, -40, -40, -50, -50, -40, -40, -30,
+        -30, -40, -40, -50, -50, -40, -40, -30,
+        -30, -40, -40, -50, -50, -40, -40, -30
+        ]
+
+king_eg_table = [
+        -50, -30, -30, -30, -30, -30, -30, -50,
+        -30, -30,  0,  0,  0,  0, -30, -30,
+        -30, -10, 20, 30, 30, 20, -10, -30,
+        -30, -10, 30, 40, 40, 30, -10, -30,
+        -30, -10, 30, 40, 40, 30, -10, -30,
+        -30, -10, 20, 30, 30, 20, -10, -30,
+        -30, -20, -10,  0,  0, -10, -20, -30,
+        -50, -40, -30, -20, -20, -30, -40, -50,
+        ]
 
 piece_symbols = {
     chess.Piece(chess.KING, chess.BLACK): '♔',
@@ -109,90 +194,38 @@ def minimax(board, depth, alpha, beta, maximizing_player):
         return min_eval, best_move
 
 
+def is_endgame(board):
+    piece_count = len(board.pieces(chess.QUEEN, chess.WHITE)) + \
+                  len(board.pieces(chess.ROOK, chess.WHITE)) + \
+                  len(board.pieces(chess.BISHOP, chess.WHITE)) + \
+                  len(board.pieces(chess.KNIGHT, chess.WHITE)) + \
+                  len(board.pieces(chess.QUEEN, chess.BLACK)) + \
+                  len(board.pieces(chess.ROOK, chess.BLACK)) + \
+                  len(board.pieces(chess.BISHOP, chess.BLACK)) + \
+                  len(board.pieces(chess.KNIGHT, chess.BLACK))
+
+    return piece_count <= 6
+
+
 def evaluate_board(board):
-    piece_values = {
-        chess.PAWN: 100,
-        chess.KNIGHT: 320,
-        chess.BISHOP: 330,
-        chess.ROOK: 500,
-        chess.QUEEN: 900,
-        chess.KING: 20000
-    }
-
-    pawn_table = [
-            0, 0, 0, 0, 0, 0, 0, 0,
-            5, 10, 10, -20, -20, 10, 10, 5,
-            5, -5, -10, 0, 0, -10, -5, 5,
-            0, 0, 0, 20, 20, 0, 0, 0,
-            5, 5, 10, 25, 25, 10, 5, 5,
-            10, 10, 20, 30, 30, 20, 10, 10,
-            50, 50, 50, 50, 50, 50, 50, 50,
-            0, 0, 0, 0, 0, 0, 0, 0
-            ]
-
-    knight_table = [
-            -50, -40, -30, -30, -30, -30, -40, -50,
-            -40, -20, 0, 5, 5, 0, -20, -40,
-            -30, 5, 10, 15, 15, 10, 5, -30,
-            -30, 0, 10, 15, 15, 10, 0, -30,
-            -30, 5, 15, 20, 20, 15, 5, -30,
-            -30, 0, 15, 20, 20, 15, 0, -30,
-            -40, -20, 0, 0, 0, 0, -20, -40,
-            -50, -40, -30, -30, -30, -30, -40, -50
-            ]
-
-    bishop_table = [
-            -20, -10, -10, -10, -10, -10, -10, -20,
-            -10, 5, 0, 0, 0, 0, 5, -10,
-            -10, 10, 10, 10, 10, 10, 10, -10,
-            -10, 0, 10, 10, 10, 10, 0, -10,
-            -10, 5, 5, 10, 10, 5, 5, -10,
-            -10, 0, 5, 10, 10, 5, 0, -10,
-            -10, 0, 0, 0, 0, 0, 0, -10,
-            -20, -10, -10, -10, -10, -10, -10, -20
-            ]
-
-    rook_table = [
-            0, 0, 0, 5, 5, 0, 0, 0
-            -5, 0, 0, 0, 0, 0, 0, -5,
-            -5, 0, 0, 0, 0, 0, 0, -5,
-            -5, 0, 0, 0, 0, 0, 0, -5,
-            -5, 0, 0, 0, 0, 0, 0, -5,
-            -5, 0, 0, 0, 0, 0, 0, -5,
-            5, 10, 10, 10, 10, 10, 10, 5,
-            0, 0, 0, 0, 0, 0, 0, 0,
-            ]
-
-    queen_table = [
-            -20, -10, -10, -5, -5, -10, -10, -20,
-            -10, 0, 0, 0, 0, 0, 0, -10,
-            -10, 0, 5, 5, 5, 5, 0, -10,
-            -5, 0, 5, 5, 5, 5, 0, -5,
-            0, 0, 5, 5, 5, 5, 0, -5,
-            -10, 5, 5, 5, 5, 5, 0, -10,
-            -10, 0, 5, 0, 0, 0, 0, -10,
-            -20, -10, -10, -5, -5, -10, -10, -20
-            ]
-
-    king_table = [
-            20, 30, 10, 0, 0, 10, 30, 20,
-            20, 20, 0, 0, 0, 0, 20, 20,
-            -10, -20, -20, -20, -20, -20, -20, -10,
-            -20, -30, -30, -40, -40, -30, -30, -20,
-            -30, -40, -40, -50, -50, -40, -40, -30,
-            -30, -40, -40, -50, -50, -40, -40, -30,
-            -30, -40, -40, -50, -50, -40, -40, -30,
-            -30, -40, -40, -50, -50, -40, -40, -30
-            ]
-
-    piece_tables = {
-        chess.PAWN: pawn_table,
-        chess.KNIGHT: knight_table,
-        chess.BISHOP: bishop_table,
-        chess.ROOK: rook_table,
-        chess.QUEEN: queen_table,
-        chess.KING: king_table
-    }
+    if is_endgame(board):
+        piece_tables = {
+            chess.PAWN: pawn_table,
+            chess.KNIGHT: knight_table,
+            chess.BISHOP: bishop_table,
+            chess.ROOK: rook_table,
+            chess.QUEEN: queen_table,
+            chess.KING: king_eg_table
+            }
+    else:
+        piece_tables = {
+            chess.PAWN: pawn_table,
+            chess.KNIGHT: knight_table,
+            chess.BISHOP: bishop_table,
+            chess.ROOK: rook_table,
+            chess.QUEEN: queen_table,
+            chess.KING: king_table
+            }
 
     score = 0
     for square in chess.SQUARES:
@@ -229,38 +262,48 @@ def stockfish_move(board, depth=20):
     fish.set_fen_position(board.fen())
 
     best_move = fish.get_best_move_time(time=max_time)
-    print(best_move)
+    # print(best_move)
 
     return best_move
 
 
 def main():
-    board = chess.Board()
     """
     for square in chess.SQUARES:
         print(square)
     return
     """
+    wins = 0
+    losses = 0
+    draws = 0
 
-    disp_img = display_board(board)
-    while not board.is_game_over():
-        if board.turn == chess.WHITE:
-            move = bot_move(board)
-            board.push(move)
-            # print_board(board, move)
-            disp_img = display_board(board, disp_img)
-        else:
-            # user_move = input("Enter your move in UCI notation: ")
-            user_move = stockfish_move(board)
-            try:
-                board.push_uci(user_move)
+    # disp_img = display_board(board)
+    for i in range(100):
+        board = chess.Board()
+        while not board.is_game_over():
+            if board.turn == chess.WHITE:
+                move = bot_move(board)
+                board.push(move)
                 # print_board(board, move)
-                disp_img = display_board(board, disp_img)
-            except ValueError:
-                print("Invalid move, try again.")
+                # disp_img = display_board(board, disp_img)
+            else:
+                # user_move = input("Enter your move in UCI notation: ")
+                user_move = stockfish_move(board)
+                try:
+                    board.push_uci(user_move)
+                    # print_board(board, move)
+                    # disp_img = display_board(board, disp_img)
+                except ValueError:
+                    print("Invalid move, try again.")
+        print(f"Game {i} over. Result:", board.result())
+        if board.result == "1-0":
+            wins += 1
+        elif board.result == "0-1":
+            losses += 1
+        elif board.result == "1/2-1/2":
+            draws += 1
 
-    print("Game over. Result:", board.result())
-    print(board.fullmove_number)
+    print(f"Wins: {wins}\nLosses: {losses}\nDraws: {draws}")
 
 
 if __name__ == "__main__":

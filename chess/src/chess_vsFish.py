@@ -277,24 +277,24 @@ def main():
     losses = 0
     draws = 0
 
-    board = chess.Board()
-    disp_img = display_board(board)
-    while not board.is_game_over():
-        if board.turn == chess.WHITE:
-            move = bot_move(board)
-            board.push(move)
-            # print_board(board, move)
-            disp_img = display_board(board, disp_img)
-        else:
-            user_move = input("Enter your move in UCI notation: ")
-            # user_move = stockfish_move(board)
-            try:
-                board.push_uci(user_move)
+    # disp_img = display_board(board)
+    for i in range(30):
+        board = chess.Board()
+        while not board.is_game_over():
+            if board.turn == chess.WHITE:
+                move = bot_move(board)
+                board.push(move)
                 # print_board(board, move)
-                disp_img = display_board(board, disp_img)
-            except ValueError:
-                print("Invalid move, try again.")
-        """
+                # disp_img = display_board(board, disp_img)
+            else:
+                # user_move = input("Enter your move in UCI notation: ")
+                user_move = stockfish_move(board)
+                try:
+                    board.push_uci(user_move)
+                    # print_board(board, move)
+                    # disp_img = display_board(board, disp_img)
+                except ValueError:
+                    print("Invalid move, try again.")
         print(f"Game {i} over. Result:", board.result())
         if board.result() == "1-0":
             wins += 1
@@ -302,7 +302,6 @@ def main():
             losses += 1
         elif board.result() == "1/2-1/2":
             draws += 1
-        """
 
     print(f"Wins: {wins}\nLosses: {losses}\nDraws: {draws}")
 

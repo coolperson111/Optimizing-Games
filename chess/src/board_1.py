@@ -9,25 +9,16 @@ import io
 board = chess.Board()
 selected_square = None
 
+
 def display_board(board):
-    # Generate SVG representation of the current board position
     svg_text = chess.svg.board(board=board)
-
-    # Convert SVG to PNG in memory
     png_output = svg2png(bytestring=svg_text)
-
-    # Convert PNG bytes to an in-memory binary stream
     img_stream = io.BytesIO(png_output)
-
-    # Open the image using PIL
     img = Image.open(img_stream)
-
-    # Convert PIL image to Tkinter-compatible photo image
     photo = ImageTk.PhotoImage(img)
-
-    # Display the image using Tkinter Label
     label.config(image=photo)
     label.image = photo
+
 
 def handle_click(event):
     global board, selected_square
@@ -52,6 +43,7 @@ def handle_click(event):
         selected_square = None
 
     display_board(board)
+
 
 # Create Tkinter window
 root = tk.Tk()
